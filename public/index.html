@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Manager</title>
+  <link rel="stylesheet" href="styles.css">
+<style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style></head>
+<body>
+  <div class="container">
+    <h1>Password Manager</h1>
+    <div id="login-form">
+      <h2>Login</h2>
+      <input type="text" id="login-username" placeholder="Username">
+      <input type="password" id="login-password" placeholder="Password">
+      <input type="text" id="login-token" placeholder="2FA Token">
+      <button onclick="login()">Login</button>
+      <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Register</a></p>
+    </div>
+    <div id="register-form" style="display: none;">
+      <h2>Register</h2>
+      <input type="text" id="register-username" placeholder="Username">
+      <input type="password" id="register-password" placeholder="Password">
+      <input type="email" id="register-email" placeholder="Email">
+      <button onclick="register()">Register</button>
+      <p>Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
+    </div>
+    <div id="password-manager" style="display: none;">
+      <h2>Password Manager</h2>
+      <div id="password-form">
+        <h3>Add Password</h3>
+        <input type="text" id="service" placeholder="Service">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <textarea id="notes" placeholder="Notes"></textarea>
+        <button onclick="addPassword()">Add Password</button>
+        <button onclick="generatePassword()">Generate Password</button>
+        <button onclick="checkPasswordStrength()">Check Password Strength</button>
+      </div>
+      <div id="password-list">
+        <h3>Passwords</h3>
+        <ul id="passwords"></ul>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+  
+<img class="paf-made-by" src="/made-by.png" alt="Made with App Builder — Pi SoloHost"></body>
+</html>

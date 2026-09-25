@@ -1,0 +1,7 @@
+title: "Password Manager"
+eyebrow: SoloHost App
+description: "tạo cho tôi một app : Password Manager     trình quản lý mật khẩu cá nhân, hỗ trợ lưu, tìm kiếm và tổ chức tài khoản một cách an toàn."
+footer_hint: Ready to run on Pi Desktop SoloHost.
+output_file: .env
+after_save: Saved. Start the app from SoloHost.
+fields: []

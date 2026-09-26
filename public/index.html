@@ -1,49 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Manager</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Manager — Personal Vault</title>
+<link rel="stylesheet" href="styles.css">
+
 <style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style></head>
 <body>
-  <div class="container">
+
+<!-- ===================== WELCOME ===================== -->
+<section id="screen-welcome" class="screen screen-center">
+  <div class="auth-card glass">
+    <div class="brand">🔐</div>
     <h1>Password Manager</h1>
-    <div id="login-form">
-      <h2>Login</h2>
-      <input type="text" id="login-username" placeholder="Username">
-      <input type="password" id="login-password" placeholder="Password">
-      <input type="text" id="login-token" placeholder="2FA Token">
-      <button onclick="login()">Login</button>
-      <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Register</a></p>
+    <p class="muted">Your private password vault.</p>
+    <button id="btn-goto-create" class="btn btn-primary btn-block">+ Create Vault</button>
+    <button id="btn-goto-unlock" class="btn btn-ghost btn-block" hidden>Unlock Vault</button>
+    <p class="fineprint">Your passwords → Your Vault → Your data → Your control.</p>
+  </div>
+</section>
+
+<!-- ===================== CREATE VAULT ===================== -->
+<section id="screen-create" class="screen screen-center" hidden>
+  <div class="auth-card glass">
+    <h2>Create your Vault</h2>
+    <p class="warn">⚠️ Your Master Password protects your vault. We cannot recover it for you.</p>
+
+    <label class="field-label" for="create-password">Master Password</label>
+    <div class="input-row">
+      <input type="password" id="create-password" autocomplete="new-password" placeholder="Master Password">
+      <button type="button" class="btn-icon" data-toggle-show="create-password" aria-label="Show password">👁</button>
     </div>
-    <div id="register-form" style="display: none;">
-      <h2>Register</h2>
-      <input type="text" id="register-username" placeholder="Username">
-      <input type="password" id="register-password" placeholder="Password">
-      <input type="email" id="register-email" placeholder="Email">
-      <button onclick="register()">Register</button>
-      <p>Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
+    <div class="strength-meter" id="create-strength-meter"><div class="strength-fill" id="create-strength-fill"></div></div>
+    <p class="strength-label" id="create-strength-label">&nbsp;</p>
+
+    <label class="field-label" for="create-password-confirm">Confirm Master Password</label>
+    <div class="input-row">
+      <input type="password" id="create-password-confirm" autocomplete="new-password" placeholder="Confirm Master Password">
+      <button type="button" class="btn-icon" data-toggle-show="create-password-confirm" aria-label="Show password">👁</button>
     </div>
-    <div id="password-manager" style="display: none;">
-      <h2>Password Manager</h2>
-      <div id="password-form">
-        <h3>Add Password</h3>
-        <input type="text" id="service" placeholder="Service">
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <textarea id="notes" placeholder="Notes"></textarea>
-        <button onclick="addPassword()">Add Password</button>
-        <button onclick="generatePassword()">Generate Password</button>
-        <button onclick="checkPasswordStrength()">Check Password Strength</button>
+
+    <p class="error-text" id="create-error"></p>
+    <button id="btn-create-vault" class="btn btn-primary btn-block">Create Vault</button>
+    <button id="btn-create-cancel" class="btn btn-ghost btn-block">Cancel</button>
+  </div>
+</section>
+
+<!-- ===================== UNLOCK VAULT ===================== -->
+<section id="screen-unlock" class="screen screen-center" hidden>
+  <div class="auth-card glass">
+    <div class="brand">🔐</div>
+    <h2>Unlock your Vault</h2>
+    <div class="input-row">
+      <input type="password" id="unlock-password" autocomplete="current-password" placeholder="Master Password">
+      <button type="button" class="btn-icon" data-toggle-show="unlock-password" aria-label="Show password">👁</button>
+    </div>
+    <p class="error-text" id="unlock-error"></p>
+    <button id="btn-unlock" class="btn btn-primary btn-block">Unlock Vault</button>
+  </div>
+</section>
+
+<!-- ===================== APP SHELL ===================== -->
+<section id="screen-app" class="screen app-shell" hidden>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">🔐 Password Manager</div>
+    <nav class="nav-group">
+      <button class="nav-item active" data-view="vault">🏠 Vault</button>
+      <button class="nav-item" data-view="favorites">⭐ Favorites</button>
+      <button class="nav-item" data-view="recent">🕘 Recent</button>
+      <button class="nav-item" data-view="security">🛡️ Security</button>
+      <button class="nav-item" data-view="settings">⚙️ Settings</button>
+    </nav>
+    <div class="sidebar-categories" id="sidebar-categories"></div>
+    <button id="btn-lock-now" class="btn btn-ghost btn-block">🔒 Lock Now</button>
+  </aside>
+
+  <header class="topbar">
+    <div class="search-wrap">
+      <input type="search" id="search-input" placeholder="Search passwords...">
+    </div>
+    <button id="btn-theme-toggle" class="btn-icon" aria-label="Toggle theme">🌓</button>
+    <button id="btn-lock-now-mobile" class="btn-icon" aria-label="Lock vault">🔒</button>
+  </header>
+
+  <main class="content">
+
+    <!-- ---- Vault / Favorites / Recent share the list view ---- -->
+    <div id="view-vault" class="view">
+      <div class="view-header">
+        <h2 id="view-title">Vault</h2>
+        <button id="btn-add-password" class="btn btn-primary">+ Add Password</button>
       </div>
-      <div id="password-list">
-        <h3>Passwords</h3>
-        <ul id="passwords"></ul>
+      <div class="chips" id="category-chips"></div>
+      <ul class="password-list" id="password-list"></ul>
+      <p class="empty-state" id="empty-state" hidden>No passwords yet. Add your first one.</p>
+    </div>
+
+    <!-- ---- Security ---- -->
+    <div id="view-security" class="view" hidden>
+      <div class="view-header"><h2>🛡️ Security Check</h2></div>
+      <div class="security-summary" id="security-summary"></div>
+      <div class="health-cards" id="health-cards"></div>
+      <ul class="password-list" id="security-detail-list"></ul>
+    </div>
+
+    <!-- ---- Settings ---- -->
+    <div id="view-settings" class="view" hidden>
+      <div class="view-header"><h2>⚙️ Settings</h2></div>
+
+      <h3>General</h3>
+      <div class="settings-row">
+        <span>Theme</span>
+        <select id="setting-theme">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
       </div>
+      <div class="settings-row">
+        <span>Language</span>
+        <select id="setting-language"><option value="en">English</option></select>
+      </div>
+      <div class="settings-row">
+        <span>Auto Lock</span>
+        <select id="setting-autolock">
+          <option value="1">1 minute</option>
+          <option value="5" selected>5 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="0">Never</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span>Clipboard auto-clear</span>
+        <select id="setting-clipboard">
+          <option value="10">10 seconds</option>
+          <option value="20" selected>20 seconds</option>
+          <option value="30">30 seconds</option>
+          <option value="0">Never</option>
+        </select>
+      </div>
+      <p class="fineprint" id="clipboard-support-note"></p>
+
+      <h3>Security</h3>
+      <button class="btn btn-secondary btn-block" id="btn-change-master">🔄 Change Master Password</button>
+      <button class="btn btn-secondary btn-block" id="btn-backup-vault">💾 Backup Vault</button>
+      <button class="btn btn-secondary btn-block" id="btn-import-vault">📥 Import Vault</button>
+      <input type="file" id="import-file-input" accept=".pmv,.json" hidden>
+      <button class="btn btn-secondary btn-block" id="btn-export-vault">📤 Export Vault</button>
+      <button class="btn btn-danger btn-block" id="btn-delete-vault">⚠️ Delete Vault</button>
+
+      <h3>Vault Security</h3>
+      <div class="kv-list" id="vault-security-info"></div>
+
+      <h3>About</h3>
+      <div class="kv-list">
+        <div><span>App</span><span>Password Manager — Personal Vault</span></div>
+        <div><span>Version</span><span>2.0.0</span></div>
+        <div><span>Privacy</span><span>Zero-knowledge, local-first. Your data never leaves this device unless you export it.</span></div>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="vault">🏠<span>Vault</span></button>
+    <button class="nav-item" data-view="favorites">⭐<span>Favorites</span></button>
+    <button class="nav-item" data-view="security">🛡️<span>Security</span></button>
+    <button class="nav-item" data-view="settings">⚙️<span>Settings</span></button>
+  </nav>
+</section>
+
+<!-- ===================== ITEM DETAIL / ADD-EDIT MODAL ===================== -->
+<div id="modal-item" class="modal-overlay" hidden>
+  <div class="modal glass">
+    <div class="modal-header">
+      <h3 id="item-modal-title">Add Password</h3>
+      <button class="btn-icon" id="btn-close-item-modal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Account Name</label>
+      <input type="text" id="item-name" placeholder="e.g. Google">
+
+      <label class="field-label">Website</label>
+      <input type="text" id="item-website" placeholder="https://example.com">
+
+      <label class="field-label">Username</label>
+      <input type="text" id="item-username" placeholder="user@example.com">
+
+      <label class="field-label">Password</label>
+      <div class="input-row">
+        <input type="password" id="item-password" placeholder="Password">
+        <button type="button" class="btn-icon" data-toggle-show="item-password" aria-label="Show password">👁</button>
+        <button type="button" class="btn-icon" id="btn-copy-item-password" aria-label="Copy password">📋</button>
+        <button type="button" class="btn-icon" id="btn-generate-item-password" aria-label="Generate password">🎲</button>
+      </div>
+      <div class="strength-meter" id="item-strength-meter"><div class="strength-fill" id="item-strength-fill"></div></div>
+      <p class="strength-label" id="item-strength-label">&nbsp;</p>
+
+      <label class="field-label">Category</label>
+      <select id="item-category"></select>
+
+      <label class="field-label">Tags <span class="muted">(comma separated)</span></label>
+      <input type="text" id="item-tags" placeholder="work, important">
+
+      <label class="field-label">Notes</label>
+      <textarea id="item-notes" placeholder="Optional notes"></textarea>
+
+      <label class="checkbox-row"><input type="checkbox" id="item-favorite"> Favorite</label>
+
+      <div class="kv-list" id="item-security-info"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="btn-delete-item" hidden>Delete</button>
+      <button class="btn btn-primary" id="btn-save-item">Save</button>
     </div>
   </div>
-  <script src="script.js"></script>
-  
+</div>
+
+<!-- ===================== PASSWORD GENERATOR MODAL ===================== -->
+<div id="modal-generator" class="modal-overlay" hidden>
+  <div class="modal glass">
+    <div class="modal-header">
+      <h3>Password Generator</h3>
+      <button class="btn-icon" id="btn-close-generator-modal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="generated-display" id="generated-password-display">••••••••••••••••</div>
+      <div class="strength-meter" id="gen-strength-meter"><div class="strength-fill" id="gen-strength-fill"></div></div>
+      <p class="strength-label" id="gen-strength-label">&nbsp;</p>
+
+      <label class="field-label">Length: <span id="gen-length-value">20</span></label>
+      <input type="range" id="gen-length" min="8" max="64" value="20">
+
+      <label class="checkbox-row"><input type="checkbox" id="gen-upper" checked> Uppercase (A-Z)</label>
+      <label class="checkbox-row"><input type="checkbox" id="gen-lower" checked> Lowercase (a-z)</label>
+      <label class="checkbox-row"><input type="checkbox" id="gen-numbers" checked> Numbers (0-9)</label>
+      <label class="checkbox-row"><input type="checkbox" id="gen-symbols" checked> Symbols (!@#...)</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-copy-generated">Copy</button>
+      <button class="btn btn-primary" id="btn-regenerate">Generate</button>
+      <button class="btn btn-secondary" id="btn-use-generated" hidden>Use this password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== GENERIC CONFIRM MODAL ===================== -->
+<div id="modal-confirm" class="modal-overlay" hidden>
+  <div class="modal glass modal-small">
+    <div class="modal-header"><h3 id="confirm-title">Are you sure?</h3></div>
+    <div class="modal-body">
+      <p id="confirm-message"></p>
+      <input type="password" id="confirm-master-password" placeholder="Master Password" hidden>
+      <input type="text" id="confirm-typed-text" placeholder="" hidden>
+      <p class="error-text" id="confirm-error"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="btn-confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CHANGE MASTER PASSWORD MODAL ===================== -->
+<div id="modal-change-master" class="modal-overlay" hidden>
+  <div class="modal glass">
+    <div class="modal-header">
+      <h3>Change Master Password</h3>
+      <button class="btn-icon" id="btn-close-change-master" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Current Master Password</label>
+      <input type="password" id="cm-current">
+      <label class="field-label">New Master Password</label>
+      <input type="password" id="cm-new">
+      <div class="strength-meter" id="cm-strength-meter"><div class="strength-fill" id="cm-strength-fill"></div></div>
+      <label class="field-label">Confirm New Master Password</label>
+      <input type="password" id="cm-confirm">
+      <p class="error-text" id="cm-error"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-block" id="btn-cm-submit">Change Master Password</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="i18n.js"></script>
+<script src="crypto.js"></script>
+<script src="db.js"></script>
+<script src="app.js"></script>
+
 <img class="paf-made-by" src="/made-by.png" alt="Made with App Builder — Pi SoloHost"></body>
 </html>

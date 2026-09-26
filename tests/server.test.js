@@ -1,35 +1,34 @@
 const request = require('supertest');
 const app = require('../server');
 
-describe('Password Manager API', () => {
-  it('should return health status', async () => {
-    const res = await request(app)
-      .get('/health');
-    expect(res.statusCode).toEqual(200);
-    expect(res.text).toBe('OK');
+describe('Password Manager server', () => {
+  it('returns healthy status on /health', async () => {
+    const res = await request(app).get('/health');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ status: 'ok' });
   });
 
-  it('should register a new user', async () => {
-    const res = await request(app)
-      .post('/register')
-      .send({
-        username: 'testuser',
-        password: 'testpass',
-        email: 'test@example.com'
-      });
-    expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('id');
+  it('never leaks secrets from the health endpoint', async () => {
+    const res = await request(app).get('/health');
+    const text = JSON.stringify(res.body).toLowerCase();
+    expect(text).not.toMatch(/password|secret|key|vault/);
   });
 
-  it('should login a user', async () => {
-    const res = await request(app)
-      .post('/login')
-      .send({
-        username: 'testuser',
-        password: 'testpass',
-        token: '123456'
-      });
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toHaveProperty('message', 'Login successful');
+  it('serves the frontend entry point', async () => {
+    const res = await request(app).get('/');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toMatch(/Password Manager/);
+  });
+
+  it('serves the client-side crypto module (no server-side crypto secrets)', async () => {
+    const res = await request(app).get('/crypto.js');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toMatch(/AES-GCM/);
+  });
+
+  it('sets baseline security headers', async () => {
+    const res = await request(app).get('/health');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['content-security-policy']).toBeDefined();
   });
 });

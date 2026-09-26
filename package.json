@@ -1,24 +1,17 @@
 {
   "name": "password-manager",
-  "version": "1.0.0",
-  "description": "A personal password manager that allows users to securely store, search, and organize their accounts.",
+  "version": "2.0.0",
+  "description": "A local-first, zero-knowledge personal password vault. All encryption happens in the browser (WebCrypto); the server only serves static files and a health check.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "jest"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "sqlite3": "^5.0.2",
-    "bcrypt": "^5.0.1",
-    "crypto-js": "^4.1.1",
-    "speakeasy": "^2.0.0",
-    "zxcvbn": "^4.4.2",
-    "browserslist": "^4.21.5"
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "jest": "^27.4.3",
-    "supertest": "^6.1.6",
-    "cypress": "^9.1.0"
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
   }
 }
